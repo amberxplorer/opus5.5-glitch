@@ -47,10 +47,11 @@ function settle(text, t, t0, dur, seed) {
   return out;
 }
 // text losing characters to U+FFFD, the replacement character
+const REPLACEMENT = String.fromCharCode(0xfffd);
 function rot(text, amount, seed) {
   if (amount <= 0) return text;
   let out = '';
-  for (let i = 0; i < text.length; i++) out += text[i] !== ' ' && hash(i, seed) < amount ? '�' : text[i];
+  for (let i = 0; i < text.length; i++) out += text[i] !== ' ' && hash(i, seed) < amount ? REPLACEMENT : text[i];
   return out;
 }
 

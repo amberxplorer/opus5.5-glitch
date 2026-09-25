@@ -13,7 +13,7 @@ const [out, wav, size = '720x1280', fpsS = '30', fontDir] = process.argv.slice(2
 const [W, H] = size.split('x').map(Number);
 const fps = Number(fpsS);
 const LEAD = 1.0;          // seconds of the title card (with its play button) before the press
-const END = 93.0;          // music time to stop at (the last chord has faded)
+const END = 122.0;         // music time to stop at (the file has ended; two seconds of black)
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
