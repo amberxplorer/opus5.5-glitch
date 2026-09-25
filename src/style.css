@@ -1,0 +1,17 @@
+/* one deliberate look: a black room with a screen in it */
+:root { --room: #000000; --text: #eeeeec; color-scheme: dark; }
+html { height: 100%; background: var(--room); overflow: hidden; }
+body {
+  margin: 0; height: 100%; background: var(--room); color: var(--text); overflow: hidden;
+  cursor: default; user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+body.play { cursor: pointer; }
+body.hide { cursor: none; }
+canvas { position: fixed; left: 0; top: 0; display: block; }
+#hud { pointer-events: none; }
+body.nogl::after {
+  content: "This piece needs WebGL 2, which this browser has turned off.";
+  position: fixed; left: 16px; right: 16px; top: 16px;
+  font: 500 18px/1.4 "Instrument Sans", system-ui, sans-serif; color: var(--text);
+}
