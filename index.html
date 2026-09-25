@@ -3125,8 +3125,8 @@ vec3 toYIQ(vec3 c) { return mat3(0.299, 0.596, 0.211, 0.587, -0.274, -0.523, 0.1
 vec3 toRGB(vec3 y) { return mat3(1.0, 1.0, 1.0, 0.956, -0.272, -1.106, 0.621, -0.647, 1.703) * y; }
 void main() {
   vec2 p = floor(gl_FragCoord.xy);
-  float line = p.y;
-  float off = (hash(vec2(line, uFrame)) - 0.5) * 1.8 * uAmt;
+  float line = p.y, f2 = floor(uFrame * 0.5);
+  float off = (hash(vec2(line, f2)) - 0.5) * 1.8 * uAmt;
   float trk = exp(-pow((line - uTrack) / 16.0, 2.0)) * uAmt;
   off += trk * (hash(vec2(line, uFrame + 7.0)) - 0.5) * 90.0;
   off += smoothstep(uSize.y - 20.0, uSize.y - 4.0, line) * (14.0 + 12.0 * hash(vec2(line, uFrame + 11.0)));
@@ -3136,10 +3136,10 @@ void main() {
   vec2 iq = vec2(0.0);
   for (int k = 0; k < 8; k++) iq += toYIQ(px(x - 5.0 - float(k) * 1.7, line)).yz;
   iq /= 8.0;
-  Y += 0.06 * length(iq) * cos(3.14159 * (p.x + line + uFrame));
+  Y += 0.06 * length(iq) * cos(3.14159 * (p.x + line + f2));
   Y += 0.11 * luma(px(x - 18.0, line));
-  Y += (hash(p + uFrame * 13.0) - 0.5) * 0.09 * uAmt;
-  Y += trk * (hash(p + uFrame * 3.0) - 0.4) * 0.8;
+  Y += (hash(p + f2 * 13.0) - 0.5) * 0.09 * uAmt;
+  Y += trk * (hash(p + f2 * 3.0) - 0.4) * 0.8;
   if (hash(vec2(floor(line / 2.0), floor(uFrame / 3.0) + uSeed)) > 0.9982) Y = mix(Y, 1.0, step(hash(vec2(floor(p.x / 40.0), line)), 0.6));
   o = vec4(toRGB(vec3(Y, iq * 1.2)), 1.0);
 }`;
@@ -3313,8 +3313,9 @@ void main() {
     vec2 c = uv - 0.5; col *= 1.0 - dot(c, c) * 1.1 * uCRT.x;
   }
   col *= vis * boost;
-  if (uSnow > 0.0) col = mix(col, vec3(hash(floor(sp / max(1.0, uK)) + fract(uT * 7.13) * 431.0)), uSnow);
-  col += (hash(sp + fract(uT * 3.7) * 311.0) - 0.5) * uGrain;
+  // noise holds for a few frames: it still reads as grain and snow, and video encoders can keep up
+  if (uSnow > 0.0) col = mix(col, vec3(hash(floor(sp / max(1.0, uK)) + fract(floor(uT * 15.0) * 0.2137) * 431.0)), uSnow);
+  col += (hash(sp + fract(floor(uT * 12.0) * 0.1373) * 311.0) - 0.5) * uGrain;
   col *= 1.0 - uFade;
   o = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
