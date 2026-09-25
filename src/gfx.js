@@ -150,7 +150,7 @@ function init(opts) {
   canvas = opts.canvas; hud = opts.hud; capture = !!opts.capture;
   gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, preserveDrawingBuffer: capture, powerPreference: 'high-performance' });
   if (!gl) throw new Error('WebGL 2 unavailable');
-  floatOK = !!gl.getExtension('EXT_color_buffer_float');
+  floatOK = !!gl.getExtension('EXT_color_buffer_float') && !/[?&]nofloat\b/.test(location.search);   // ?nofloat tests the 8-bit path
   hctx = hud.getContext('2d');
   tri = gl.createVertexArray();
   gl.bindVertexArray(tri);

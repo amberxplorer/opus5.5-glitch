@@ -261,12 +261,12 @@ function resave(e) {
   const shifts = [[1, 0], [0, 1], [-1, 0], [0, -1]];
   const t = JPG.events[e];
   const loud = Math.round((t - GT[6]) / STEP) % 8 === 4 && t > T(46, 0);
-  const size = [L.WW, L.WH];
-  GFX.pass(P.jpegIn, { uSize: size, uShift: shifts[e % 4] }, { uS: R.work }, R.f1);
-  GFX.pass(P.jpegRow, { uSize: size, uC: DCT, uInv: 0 }, { uS: R.f1 }, R.f2);
-  GFX.pass(P.jpegCol, { uSize: size, uC: DCT, uInv: 0, uQY: QY, uQC: QC, uScale: scale, uGl: loud ? [0.04, 0.05, 0.03, 0] : [0.004, 0.006, 0.002, 0], uSeed: e * 7.31 }, { uS: R.f2 }, R.f1);
-  GFX.pass(P.jpegCol, { uSize: size, uC: DCT, uInv: 1, uQY: QY, uQC: QC, uScale: 1, uGl: [0, 0, 0, 0], uSeed: 0 }, { uS: R.f1 }, R.f2);
-  GFX.pass(P.jpegRow, { uSize: size, uC: DCT, uInv: 1, uSq: [L.sq.x, L.sq.y, 720, 0] }, { uS: R.f2 }, R.other);
+  const size = [L.WW, L.WH], enc = GFX.floatOK ? 0 : 1;
+  GFX.pass(P.jpegIn, { uSize: size, uShift: shifts[e % 4], uEnc: enc }, { uS: R.work }, R.f1);
+  GFX.pass(P.jpegRow, { uSize: size, uC: DCT, uInv: 0, uEnc: enc }, { uS: R.f1 }, R.f2);
+  GFX.pass(P.jpegCol, { uSize: size, uC: DCT, uInv: 0, uQY: QY, uQC: QC, uScale: scale, uGl: loud ? [0.04, 0.05, 0.03, 0] : [0.004, 0.006, 0.002, 0], uSeed: e * 7.31, uEnc: enc }, { uS: R.f2 }, R.f1);
+  GFX.pass(P.jpegCol, { uSize: size, uC: DCT, uInv: 1, uQY: QY, uQC: QC, uScale: 1, uGl: [0, 0, 0, 0], uSeed: 0, uEnc: enc }, { uS: R.f1 }, R.f2);
+  GFX.pass(P.jpegRow, { uSize: size, uC: DCT, uInv: 1, uSq: [L.sq.x, L.sq.y, 720, 0], uEnc: enc }, { uS: R.f2 }, R.other);
   swap();
   const st = S.stutters.some((s) => Math.abs(s[0] - t) < STEP * 0.5);
   if (st || (loud && e % 3 === 0)) {

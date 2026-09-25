@@ -87,7 +87,13 @@ void main() {
 
 // JPEG, one save, in five passes: colour + chroma subsampling; rows; columns + quantise;
 // inverse columns; inverse rows + colour. The work canvas is 8-bit, so each save rounds too.
-SHADERS.jpegIn = `
+// without float targets the DCT's signed values are packed into 8 bits (coarser, still JPEG-like)
+SHADERS.pack = `
+uniform int uEnc;
+vec3 enc(vec3 v) { return uEnc == 1 ? v / 8.0 + 0.5 : v; }
+vec3 dec(vec3 c) { return uEnc == 1 ? (c - 0.5) * 8.0 : c; }
+`;
+SHADERS.jpegIn = SHADERS.pack + `
 uniform sampler2D uS; uniform vec2 uSize; uniform ivec2 uShift;
 void main() {
   ivec2 lim = ivec2(uSize) - 1;
@@ -96,9 +102,9 @@ void main() {
   ivec2 b = (q / 2) * 2;
   vec3 s = texelFetch(uS, b, 0).rgb + texelFetch(uS, min(b + ivec2(1, 0), lim), 0).rgb + texelFetch(uS, min(b + ivec2(0, 1), lim), 0).rgb + texelFetch(uS, min(b + ivec2(1, 1), lim), 0).rgb;
   s *= 0.25;
-  o = vec4(luma(c) - 0.5, dot(s, vec3(-0.168736, -0.331264, 0.5)), dot(s, vec3(0.5, -0.418688, -0.081312)), 1.0);
+  o = vec4(enc(vec3(luma(c) - 0.5, dot(s, vec3(-0.168736, -0.331264, 0.5)), dot(s, vec3(0.5, -0.418688, -0.081312)))), 1.0);
 }`;
-SHADERS.jpegRow = `
+SHADERS.jpegRow = SHADERS.pack + `
 uniform sampler2D uS; uniform vec2 uSize; uniform float uC[64]; uniform int uInv; uniform vec4 uSq;
 void main() {
   ivec2 p = ivec2(gl_FragCoord.xy);
@@ -106,20 +112,20 @@ void main() {
   if (uInv == 1 && (rel.x < 0.0 || rel.y < 0.0 || rel.x >= uSq.z || rel.y >= uSq.z)) { o = vec4(0.0, 0.0, 0.0, 1.0); return; }
   int u = p.x & 7, bx = p.x - u, w = int(uSize.x) - 1;
   vec3 s = vec3(0.0);
-  for (int k = 0; k < 8; k++) s += (uInv == 1 ? uC[k * 8 + u] : uC[u * 8 + k]) * texelFetch(uS, ivec2(min(bx + k, w), p.y), 0).rgb;
+  for (int k = 0; k < 8; k++) s += (uInv == 1 ? uC[k * 8 + u] : uC[u * 8 + k]) * dec(texelFetch(uS, ivec2(min(bx + k, w), p.y), 0).rgb);
   if (uInv == 1) {
     float Y = s.x + 0.5;
     o = vec4(clamp(vec3(Y + 1.402 * s.z, Y - 0.344136 * s.y - 0.714136 * s.z, Y + 1.772 * s.y), 0.0, 1.0), 1.0);
-  } else o = vec4(s, 1.0);
+  } else o = vec4(enc(s), 1.0);
 }`;
-SHADERS.jpegCol = `
+SHADERS.jpegCol = SHADERS.pack + `
 uniform sampler2D uS; uniform vec2 uSize; uniform float uC[64]; uniform int uInv;
 uniform float uQY[64]; uniform float uQC[64]; uniform float uScale; uniform vec4 uGl; uniform float uSeed;
 void main() {
   ivec2 p = ivec2(gl_FragCoord.xy);
   int v = p.y & 7, by = p.y - v, u = p.x & 7, h = int(uSize.y) - 1;
   vec3 s = vec3(0.0);
-  for (int k = 0; k < 8; k++) s += (uInv == 1 ? uC[k * 8 + v] : uC[v * 8 + k]) * texelFetch(uS, ivec2(p.x, min(by + k, h)), 0).rgb;
+  for (int k = 0; k < 8; k++) s += (uInv == 1 ? uC[k * 8 + v] : uC[v * 8 + k]) * dec(texelFetch(uS, ivec2(p.x, min(by + k, h)), 0).rgb);
   if (uInv == 0) {
     int i = v * 8 + u;
     float qy = clamp(floor(uQY[i] * uScale + 0.5), 1.0, 255.0) / 255.0;
@@ -131,7 +137,7 @@ void main() {
     if (r > 1.0 - uGl.y && i == int(hash(blk + uSeed + 5.0) * 20.0) + 1) s += vec3(0.35, 0.18, -0.18) * sign(hash(blk + uSeed + 9.0) - 0.5);
     if (i == 0 && hash(blk + uSeed + 2.0) < uGl.z) s.x = -0.5;
   }
-  o = vec4(s, 1.0);
+  o = vec4(enc(s), 1.0);
 }`;
 
 // whole 16×16 blocks taken from somewhere else
